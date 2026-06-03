@@ -636,6 +636,7 @@ export default function ArcSafetyPremiumMockup() {
             <div>
               <div className="flex items-center gap-2 text-cyan-300 text-sm font-medium mb-2"><span>Stewart Light</span><span>•</span><span>TCRR / ARC Safety Monitor</span></div>
               <h1 className="text-3xl md:text-5xl font-bold tracking-tight">ARC Safety Assistant</h1>
+              <div className="mt-3 text-sm text-slate-400">Version v4 Timeline Intelligence Beta · Educational & Research Use Only</div>
               <p className="text-slate-400 mt-2 max-w-xl">Asistente clínico bedside para razonamiento fisiopatológico del equilibrio ácido–base y seguridad de ARC.</p>
             </div>
             <div className="bg-slate-900/70 border border-slate-700 rounded-3xl p-2 flex gap-2 self-start">
