@@ -75,6 +75,14 @@ function computeAcidBase(inputs) {
   const sbeAlb = 0.3 * (40 - alb)
   const sbeUi = sbe - sbeSid - sbeAlb
   const uiResidual = Number.isFinite(lactate) ? sbeUi + lactate : NaN
+  const relevantUnmeasuredAnions =
+    Number.isFinite(uiResidual) &&
+    uiResidual <= -4
+  const unmeasuredAnionsSeverity =
+    uiResidual <= -8 ? 'severe' :
+    uiResidual <= -6 ? 'moderate' :
+    relevantUnmeasuredAnions ? 'mild' :
+    'none'
   const expectedPco2 = 1.5 * hco3 + 8
   const lowPco2 = expectedPco2 - 2
   const highPco2 = expectedPco2 + 2
@@ -131,6 +139,7 @@ function computeAcidBase(inputs) {
   if (sbeAlb >= 2) summary.push('Hipoalbuminemia con efecto alcalinizante: puede ocultar acidosis relevantes.')
   if (sbeUi <= -4) {
     if (
+      unmeasuredAnionsSeverity === 'none' &&
       Number.isFinite(lactate) &&
       lactate < 2 &&
       (
@@ -140,16 +149,23 @@ function computeAcidBase(inputs) {
       )
     ) {
       summary.push('Acidosis por aniones no medidos no explicada por lactato: valorar uremia, cetonas, tóxicos u otros aniones según contexto.')
-    } else if (Number.isFinite(lactate) && lactate >= 2 && uiResidual <= -6) {
+    } else if (unmeasuredAnionsSeverity === 'none' && Number.isFinite(lactate) && lactate >= 2 && uiResidual <= -6) {
       summary.push('Acidosis importante por aniones no medidos no explicada por lactato.')
-    } else if (Number.isFinite(lactate) && lactate >= 2 && uiResidual <= -4 && uiResidual > -6) {
+    } else if (unmeasuredAnionsSeverity === 'none' && Number.isFinite(lactate) && lactate >= 2 && uiResidual <= -4 && uiResidual > -6) {
       summary.push('Residual moderado de aniones no medidos tras lactato: interpretar en contexto y valorar tendencia.')
-    } else if (Number.isFinite(lactate) && lactate >= 2) {
+    } else if (unmeasuredAnionsSeverity === 'none' && Number.isFinite(lactate) && lactate >= 2) {
       summary.push('El lactato explica la mayor parte del componente de UI.')
     }
   }
+  if (unmeasuredAnionsSeverity === 'mild') {
+    summary.push('🧪 Aniones no medidos relevantes: residual leve-moderado tras lactato. No atribuir automáticamente a citrato; considerar cetonas, uremia, pirroglutamato, tóxicos u otros aniones según contexto.')
+  } else if (unmeasuredAnionsSeverity === 'moderate') {
+    summary.push('🧪 Acidosis relevante por aniones no medidos no explicada por lactato. Considerar cetonas, uremia, pirroglutamato, tóxicos, acumulación de citrato u otros aniones según contexto.')
+  } else if (unmeasuredAnionsSeverity === 'severe') {
+    summary.push('🧪 Acidosis importante por aniones no medidos no explicada por lactato. Priorizar diagnóstico diferencial: cetonas, uremia, pirroglutamato, tóxicos, acumulación de citrato u otros aniones.')
+  }
 
-  return { ph, pco2, hco3, sbe, na, cl, alb, lactate, sidRef, naCl, sbeSid, sbeAlb, sbeUi, uiResidual, expectedPco2, lowPco2, highPco2, resp, summary, unexplainedAcidosis }
+  return { ph, pco2, hco3, sbe, na, cl, alb, lactate, sidRef, naCl, sbeSid, sbeAlb, sbeUi, uiResidual, relevantUnmeasuredAnions, unmeasuredAnionsSeverity, expectedPco2, lowPco2, highPco2, resp, summary, unexplainedAcidosis }
 }
 
 function computeArc(inputs, acidBase) {
@@ -176,6 +192,16 @@ function computeArc(inputs, acidBase) {
   const realDynamicSignals = [ratioRising, lactateRising, vasoRising].filter(Boolean).length
   const technicalConcern = technicalUnchecked && caIonico < 0.95 && ratio >= 2.25
   const hasMajorSignal = ratio > 2.5 || unexplainedAcidosis || technicalChecked
+  const weakCalciumSignal =
+    ratio < 2.30 &&
+    !technicalChecked &&
+    caIonico >= 0.95
+  const metabolicDeteriorationWithUnmeasuredAnions =
+    weakCalciumSignal &&
+    unexplainedAcidosis &&
+    (lactateRising || vasoRising || inputs.highRiskContext) &&
+    acidBase.relevantUnmeasuredAnions
+  const strongCalciumSignalForRed = ratio > 2.5 || technicalChecked
 
   let status = '🟢 Bajo riesgo'
   let level = 'green'
@@ -185,7 +211,7 @@ function computeArc(inputs, acidBase) {
 
   const citrateBufferExcess = acidBase.ph > 7.45 && acidBase.hco3 > 30 && acidBase.sbe > 5 && acidBase.sbeSid >= 3 && ratio < 2.25 && !ratioRising && !lactateRising && !vasoRising && !unexplainedAcidosis
 
-  if (hasMajorSignal && realDynamicSignals >= 1 && !technicalUnchecked && !severeShockConfounder && (unexplainedAcidosis || ratio > 2.5 || realDynamicSignals >= 2 || inputs.highRiskContext)) {
+  if (!technicalUnchecked && !severeShockConfounder && (strongCalciumSignalForRed || (hasMajorSignal && realDynamicSignals >= 1 && !weakCalciumSignal && (unexplainedAcidosis || ratio > 2.5 || realDynamicSignals >= 2 || inputs.highRiskContext)))) {
     status = '🔴 Alta sospecha'
     level = 'red'
     title = 'Metabolismo insuficiente / acumulación de citrato probable'
@@ -198,7 +224,11 @@ function computeArc(inputs, acidBase) {
     const isolatedBiochemicalSignal = ratio >= 2.25 && ratio <= 2.5 && !ratioRising && !lactateRising && !vasoRising && stewartQuiet
     const contextualWatch = ratio < 2.25 && !ratioRising && !unexplainedAcidosis && inputs.highRiskContext && (lactateRising || vasoRising || acidBase.lactate >= 6 || severeShockConfounder)
 
-    if (contextualWatch) {
+    if (metabolicDeteriorationWithUnmeasuredAnions) {
+      status = '🟡 Deterioro metabólico en contexto de ARC'
+      title = 'Existe deterioro metabólico progresivo con aniones no medidos relevantes. La evidencia específica de acumulación de citrato es actualmente insuficiente.'
+      confidence = 'Existe deterioro metabólico relevante; la señal cálcica específica de acumulación de citrato es actualmente limitada.'
+    } else if (contextualWatch) {
       title = severeShockConfounder
         ? 'Vigilancia reforzada: alto riesgo metabólico sin evidencia bioquímica actual de acumulación de citrato'
         : 'Vigilancia contextual: sin evidencia bioquímica de acumulación de citrato'
@@ -422,7 +452,11 @@ function makeClipboardText(inputs, acidBase, arc) {
       !s.includes('UI residual leve tras lactato')
   )
 
-  if (arc?.unexplainedAcidosis) {
+  const hasEnrichedUnmeasuredAnionsMessage = stewartEnhanced.some(
+    (s) => s.includes('🧪') && s.includes('aniones no medidos')
+  )
+
+  if (arc?.unexplainedAcidosis && !hasEnrichedUnmeasuredAnionsMessage) {
     stewartEnhanced.push(
       'Persistencia de acidosis residual no completamente explicada por lactato, compatible con aniones no medidos adicionales en este contexto clínico.'
     )
@@ -636,7 +670,7 @@ export default function ArcSafetyPremiumMockup() {
             <div>
               <div className="flex items-center gap-2 text-cyan-300 text-sm font-medium mb-2"><span>Stewart Light</span><span>•</span><span>TCRR / ARC Safety Monitor</span></div>
               <h1 className="text-3xl md:text-5xl font-bold tracking-tight">ARC Safety Assistant</h1>
-              <div className="mt-3 text-sm text-slate-400">Version v4 Timeline Intelligence Beta · Educational & Research Use Only</div>
+              <div className="mt-3 text-sm text-slate-400">Version v4.5 Expert Review · Educational & Research Use Only</div>
               <p className="text-slate-400 mt-2 max-w-xl">Asistente clínico bedside para razonamiento fisiopatológico del equilibrio ácido–base y seguridad de ARC.</p>
             </div>
             <div className="bg-slate-900/70 border border-slate-700 rounded-3xl p-2 flex gap-2 self-start">
@@ -690,7 +724,7 @@ export default function ArcSafetyPremiumMockup() {
 
             <div className="rounded-[28px] border border-slate-700 bg-slate-900/70 p-5">
               <div className="flex items-center justify-between mb-4"><div><div className="font-semibold text-lg">Equilibrio ácido–base</div><div className="text-slate-400 text-sm">Motor fisiopatológico que alimenta ARC Safety</div></div><div className="text-cyan-300 font-medium">{mode === 'teaching' ? 'Docente' : 'Expandir'}</div></div>
-              {acidBase && <div className="space-y-3"><div className="rounded-[24px] border border-slate-700 bg-slate-900/60 p-4"><div className="font-medium text-slate-200 mb-4">Resumen metabólico (Stewart Light)</div><div className="space-y-3"><div className="rounded-2xl bg-slate-800 border border-slate-700 p-4 flex items-start gap-4"><div className="text-2xl">🫁</div><div><div className="font-medium text-slate-100">Boston · pCO₂ esperada {fmt(acidBase.expectedPco2)} ±2</div><div className="text-slate-400 text-sm mt-1">{acidBase.resp}</div></div></div><Metric label="SBE_SID" value={acidBase.sbeSid} color="text-cyan-300" text={acidBase.sbeSid <= -3 ? 'Acidosis por bajo SID / hipercloremia relativa' : acidBase.sbeSid >= 3 ? (inputs.crrtArc && acidBase.ph > 7.45 && acidBase.hco3 > 30 ? 'Alto SID en TCRR + ARC: compatible con exceso de carga tampón por citrato adecuadamente metabolizado' : 'Alcalosis por alto SID / hipocloremia relativa') : 'Efecto SID pequeño'} /><Metric label="SBE_Alb" value={acidBase.sbeAlb} color="text-amber-300" text={acidBase.sbeAlb >= 2 ? 'Hipoalbuminemia con efecto alcalinizante' : 'Efecto de albúmina pequeño'} /><Metric label="SBE_UI" value={acidBase.sbeUi} color="text-red-300" text={acidBase.unexplainedAcidosis ? 'Acidosis residual no explicada por lactato' : acidBase.sbeUi <= -4 && Number.isFinite(acidBase.lactate) && acidBase.lactate >= 2 && Math.abs(acidBase.uiResidual) < 3 ? 'Componente UI dominante explicado predominantemente por lactato' : Number.isFinite(acidBase.uiResidual) && acidBase.uiResidual <= -4 && acidBase.uiResidual > -6 ? `Residual moderado tras lactato ≈ ${fmt(acidBase.uiResidual)}` : 'Componente UI no dominante'} /></div></div>{mode === 'teaching' && <div className="rounded-2xl border border-cyan-900/30 bg-cyan-950/20 p-4 text-sm text-slate-300 leading-6"><div className="text-cyan-300 font-semibold mb-1">Modo docente</div><div>SBE_SID = (Na−Cl) − referencia pH-ajustada = {fmt(acidBase.naCl)} − {fmt(acidBase.sidRef)} = {fmt(acidBase.sbeSid)}</div><div>SBE_Alb = 0.3 × (40 − albúmina) = {fmt(acidBase.sbeAlb)}</div><div>SBE_UI = SBE − SBE_SID − SBE_Alb = {fmt(acidBase.sbeUi)}</div><div>UI residual tras lactato ≈ {fmt(acidBase.uiResidual)}</div></div>}</div>}
+              {acidBase && <div className="space-y-3"><div className="rounded-[24px] border border-slate-700 bg-slate-900/60 p-4"><div className="font-medium text-slate-200 mb-4">Resumen metabólico (Stewart Light)</div><div className="space-y-3"><div className="rounded-2xl bg-slate-800 border border-slate-700 p-4 flex items-start gap-4"><div className="text-2xl">🫁</div><div><div className="font-medium text-slate-100">Boston · pCO₂ esperada {fmt(acidBase.expectedPco2)} ±2</div><div className="text-slate-400 text-sm mt-1">{acidBase.resp}</div></div></div><Metric label="SBE_SID" value={acidBase.sbeSid} color="text-cyan-300" text={acidBase.sbeSid <= -3 ? 'Acidosis por bajo SID / hipercloremia relativa' : acidBase.sbeSid >= 3 ? (inputs.crrtArc && acidBase.ph > 7.45 && acidBase.hco3 > 30 ? 'Alto SID en TCRR + ARC: compatible con exceso de carga tampón por citrato adecuadamente metabolizado' : 'Alcalosis por alto SID / hipocloremia relativa') : 'Efecto SID pequeño'} /><Metric label="SBE_Alb" value={acidBase.sbeAlb} color="text-amber-300" text={acidBase.sbeAlb >= 2 ? 'Hipoalbuminemia con efecto alcalinizante' : 'Efecto de albúmina pequeño'} /><Metric label="SBE_UI" value={acidBase.sbeUi} color="text-red-300" text={acidBase.unexplainedAcidosis ? 'Aniones no medidos residuales tras lactato' : acidBase.sbeUi <= -4 && Number.isFinite(acidBase.lactate) && acidBase.lactate >= 2 && Math.abs(acidBase.uiResidual) < 3 ? 'Componente UI dominante explicado predominantemente por lactato' : Number.isFinite(acidBase.uiResidual) && acidBase.uiResidual <= -4 && acidBase.uiResidual > -6 ? `Residual moderado tras lactato ≈ ${fmt(acidBase.uiResidual)}` : 'Componente UI no dominante'} /></div></div>{mode === 'teaching' && <div className="rounded-2xl border border-cyan-900/30 bg-cyan-950/20 p-4 text-sm text-slate-300 leading-6"><div className="text-cyan-300 font-semibold mb-1">Modo docente</div><div>SBE_SID = (Na−Cl) − referencia pH-ajustada = {fmt(acidBase.naCl)} − {fmt(acidBase.sidRef)} = {fmt(acidBase.sbeSid)}</div><div>SBE_Alb = 0.3 × (40 − albúmina) = {fmt(acidBase.sbeAlb)}</div><div>SBE_UI = SBE − SBE_SID − SBE_Alb = {fmt(acidBase.sbeUi)}</div><div>UI residual tras lactato ≈ {fmt(acidBase.uiResidual)}</div></div>}</div>}
             </div>
           </div>
         </div>
