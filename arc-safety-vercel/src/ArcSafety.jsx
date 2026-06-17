@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 const INITIAL_INPUTS = {
   ph: '7.24',
@@ -23,18 +23,18 @@ const INITIAL_INPUTS = {
 
 const CLINICAL_TEST_CASES = [
   {
-    name: 'AcumulaciÃ³n precoz sin ratio >2.5',
+    name: 'Acumulación precoz sin ratio >2.5',
     expected: 'Alta sospecha',
     inputs: { ph: '7.24', pco2: '29', hco3: '12', sbe: '-13', na: '139', cl: '103', alb: '24', lactate: '3', caTotal: '2.25', caIonico: '1.02', ratioTrend: 'rising', lactateTrend: 'rising', vasoTrend: 'rising', highRiskContext: true, technicalAlarm: 'no' }
   },
   {
-    name: 'Falso positivo tÃ©cnico de calcio',
-    expected: 'Alta sospecha no confirmada / descartar tÃ©cnica',
+    name: 'Falso positivo técnico de calcio',
+    expected: 'Alta sospecha no confirmada / descartar técnica',
     inputs: { ph: '7.37', pco2: '39', hco3: '24', sbe: '0', na: '139', cl: '104', alb: '25', lactate: '2.3', caTotal: '2.38', caIonico: '0.92', calciumIv: '7', ratioTrend: 'rising', lactateTrend: 'stable', vasoTrend: 'stable', highRiskContext: false, technicalAlarm: 'yes_unchecked' }
   },
   {
-    name: 'Alcalosis por exceso tampÃ³n metabolizado',
-    expected: 'Bajo riesgo con exceso tampÃ³n',
+    name: 'Alcalosis por exceso tampón metabolizado',
+    expected: 'Bajo riesgo con exceso tampón',
     inputs: { ph: '7.51', pco2: '48', hco3: '36', sbe: '11', na: '142', cl: '98', alb: '26', lactate: '1.5', caTotal: '2.18', caIonico: '1.08', ratioTrend: 'stable', lactateTrend: 'stable', vasoTrend: 'stable', highRiskContext: false, technicalAlarm: 'no' }
   }
 ]
@@ -46,7 +46,7 @@ function n(value) {
 }
 
 function fmt(value, digits = 1) {
-  if (!Number.isFinite(value)) return 'â€”'
+  if (!Number.isFinite(value)) return '—'
   return (Math.round(value * 10 ** digits) / 10 ** digits).toFixed(digits)
 }
 
@@ -91,13 +91,13 @@ function computeAcidBase(inputs) {
   const metabolicAlkalosisPattern = ph > 7.45 && hco3 > 30 && sbe > 2
   const meaningfulMetabolicBurden = Math.abs(sbe) >= 2 || Math.abs(sbeSid) >= 3 || Math.abs(sbeAlb) >= 2 || Math.abs(sbeUi) >= 4
 
-  let resp = 'CompensaciÃ³n respiratoria dentro del rango esperado.'
-  if (chronicHypercapnia) resp = 'Posible trastorno respiratorio primario crÃ³nico. Interpretar Boston con cautela.'
-  else if (metabolicAlkalosisPattern && pco2 > 45) resp = 'CompensaciÃ³n respiratoria compatible con alcalosis metabÃ³lica primaria.'
+  let resp = 'Compensación respiratoria dentro del rango esperado.'
+  if (chronicHypercapnia) resp = 'Posible trastorno respiratorio primario crónico. Interpretar Boston con cautela.'
+  else if (metabolicAlkalosisPattern && pco2 > 45) resp = 'Compensación respiratoria compatible con alcalosis metabólica primaria.'
   else if (meaningfulMetabolicBurden) {
-    if (pco2 > highPco2) resp = 'PCOâ‚‚ mayor de lo esperado: compensaciÃ³n insuficiente o acidosis respiratoria asociada.'
-    else if (pco2 < lowPco2) resp = 'PCOâ‚‚ menor de lo esperado: alcalosis respiratoria asociada.'
-  } else resp = 'Sin evidencia clara de carga metabÃ³lica relevante: interpretar en contexto clÃ­nico.'
+    if (pco2 > highPco2) resp = 'PCO₂ mayor de lo esperado: compensación insuficiente o acidosis respiratoria asociada.'
+    else if (pco2 < lowPco2) resp = 'PCO₂ menor de lo esperado: alcalosis respiratoria asociada.'
+  } else resp = 'Sin evidencia clara de carga metabólica relevante: interpretar en contexto clínico.'
 
   const hiddenComplexity = Math.abs(sbe) <= 2 && (Math.abs(sbeSid) >= 3 || Math.abs(sbeAlb) >= 2 || Math.abs(sbeUi) >= 4)
   const ratio = inputs.crrtArc ? n(inputs.caTotal) / n(inputs.caIonico) : NaN
@@ -129,11 +129,11 @@ function computeAcidBase(inputs) {
     )
 
   const summary = []
-  if (hiddenComplexity) summary.push('SBE aparentemente normal con trastornos metabÃ³licos opuestos coexistentes.')
+  if (hiddenComplexity) summary.push('SBE aparentemente normal con trastornos metabólicos opuestos coexistentes.')
   summary.push(resp)
   if (sbeSid <= -3) summary.push('Acidosis por bajo SID / hipercloremia relativa.')
   if (sbeSid >= 3) {
-    if (inputs.crrtArc && ph > 7.45 && hco3 > 30) summary.push('Alcalosis metabÃ³lica por alto SID en contexto TCRR + ARC: patrÃ³n compatible con exceso de carga tampÃ³n por citrato adecuadamente metabolizado. Valorar impacto de la prescripciÃ³n sobre la carga neta de tampÃ³n.')
+    if (inputs.crrtArc && ph > 7.45 && hco3 > 30) summary.push('Alcalosis metabólica por alto SID en contexto TCRR + ARC: patrón compatible con exceso de carga tampón por citrato adecuadamente metabolizado. Valorar impacto de la prescripción sobre la carga neta de tampón.')
     else summary.push('Alcalosis por alto SID / hipocloremia relativa.')
   }
   if (sbeAlb >= 2) summary.push('Hipoalbuminemia con efecto alcalinizante: puede ocultar acidosis relevantes.')
@@ -148,7 +148,7 @@ function computeAcidBase(inputs) {
         ph < 7.32
       )
     ) {
-      summary.push('Acidosis por aniones no medidos no explicada por lactato: valorar uremia, cetonas, tÃ³xicos u otros aniones segÃºn contexto.')
+      summary.push('Acidosis por aniones no medidos no explicada por lactato: valorar uremia, cetonas, tóxicos u otros aniones según contexto.')
     } else if (unmeasuredAnionsSeverity === 'none' && Number.isFinite(lactate) && lactate >= 2 && uiResidual <= -6) {
       summary.push('Acidosis importante por aniones no medidos no explicada por lactato.')
     } else if (unmeasuredAnionsSeverity === 'none' && Number.isFinite(lactate) && lactate >= 2 && uiResidual <= -4 && uiResidual > -6) {
@@ -158,11 +158,11 @@ function computeAcidBase(inputs) {
     }
   }
   if (unmeasuredAnionsSeverity === 'mild') {
-    summary.push('ðŸ§ª Aniones no medidos relevantes: residual leve-moderado tras lactato. No atribuir automÃ¡ticamente a citrato; considerar cetonas, uremia, pirroglutamato, tÃ³xicos u otros aniones segÃºn contexto.')
+    summary.push('🧪 Aniones no medidos relevantes: residual leve-moderado tras lactato. No atribuir automáticamente a citrato; considerar cetonas, uremia, pirroglutamato, tóxicos u otros aniones según contexto.')
   } else if (unmeasuredAnionsSeverity === 'moderate') {
-    summary.push('ðŸ§ª Acidosis relevante por aniones no medidos no explicada por lactato. Considerar cetonas, uremia, pirroglutamato, tÃ³xicos, acumulaciÃ³n de citrato u otros aniones segÃºn contexto.')
+    summary.push('🧪 Acidosis relevante por aniones no medidos no explicada por lactato. Considerar cetonas, uremia, pirroglutamato, tóxicos, acumulación de citrato u otros aniones según contexto.')
   } else if (unmeasuredAnionsSeverity === 'severe') {
-    summary.push('ðŸ§ª Acidosis importante por aniones no medidos no explicada por lactato. Priorizar diagnÃ³stico diferencial: cetonas, uremia, pirroglutamato, tÃ³xicos, acumulaciÃ³n de citrato u otros aniones.')
+    summary.push('🧪 Acidosis importante por aniones no medidos no explicada por lactato. Priorizar diagnóstico diferencial: cetonas, uremia, pirroglutamato, tóxicos, acumulación de citrato u otros aniones.')
   }
 
   return { ph, pco2, hco3, sbe, na, cl, alb, lactate, sidRef, naCl, sbeSid, sbeAlb, sbeUi, uiResidual, relevantUnmeasuredAnions, unmeasuredAnionsSeverity, expectedPco2, lowPco2, highPco2, resp, summary, unexplainedAcidosis }
@@ -217,22 +217,22 @@ function computeArc(inputs, acidBase) {
     acidBase.relevantUnmeasuredAnions
   const strongCalciumSignalForRed = ratioVeryHigh || ratioHighWithCompatibleSignal || technicalChecked || calciumIvEscalationSignal
 
-  let status = 'ðŸŸ¢ Bajo riesgo'
+  let status = '🟢 Bajo riesgo'
   let level = 'green'
-  let title = inputs.highRiskContext ? 'Metabolismo adecuado del citrato en contexto de alto riesgo metabÃ³lico' : 'PatrÃ³n compatible con metabolismo adecuado del citrato'
-  let action = inputs.highRiskContext ? 'Mantener monitorizaciÃ³n protocolizada con vigilancia reforzada por contexto de alto riesgo metabÃ³lico.' : 'Continuar monitorizaciÃ³n habitual segÃºn protocolo.'
-  let confidence = inputs.highRiskContext ? 'Estable, con vigilancia prudente por contexto de alto riesgo metabÃ³lico.' : 'Alta si la evoluciÃ³n permanece estable'
+  let title = inputs.highRiskContext ? 'Metabolismo adecuado del citrato en contexto de alto riesgo metabólico' : 'Patrón compatible con metabolismo adecuado del citrato'
+  let action = inputs.highRiskContext ? 'Mantener monitorización protocolizada con vigilancia reforzada por contexto de alto riesgo metabólico.' : 'Continuar monitorización habitual según protocolo.'
+  let confidence = inputs.highRiskContext ? 'Estable, con vigilancia prudente por contexto de alto riesgo metabólico.' : 'Alta si la evolución permanece estable'
 
   const citrateBufferExcess = acidBase.ph > 7.45 && acidBase.hco3 > 30 && acidBase.sbe > 5 && acidBase.sbeSid >= 3 && ratio < 2.25 && !ratioRising && !lactateRising && !vasoRising && !unexplainedAcidosis
 
   if (!technicalUnchecked && !severeShockConfounder && strongCalciumSignalForRed) {
-    status = 'ðŸ”´ Alta sospecha'
+    status = '🔴 Alta sospecha'
     level = 'red'
-    title = 'Metabolismo insuficiente / acumulaciÃ³n de citrato probable'
-    action = 'Revisar perfusiÃ³n, compensaciÃ³n de calcio y prescripciÃ³n ARC; repetir control precoz y valorar ajuste segÃºn evoluciÃ³n clÃ­nica. Considerar suspensiÃ³n inmediata de ARC o transiciÃ³n temporal a otra estrategia de anticoagulaciÃ³n si existe trayectoria convergente, ratio claramente elevado, hipocalcemia persistente o escalada de calcio IV pese a revisiÃ³n tÃ©cnica.'
-    confidence = 'Alta concordancia entre bioquÃ­mica, dinÃ¡mica clÃ­nica y hemodinÃ¡mica.'
+    title = 'Metabolismo insuficiente / acumulación de citrato probable'
+    action = 'Revisar perfusión, compensación de calcio y prescripción ARC; repetir control precoz y valorar ajuste según evolución clínica. Considerar suspensión inmediata de ARC o transición temporal a otra estrategia de anticoagulación si existe trayectoria convergente, ratio claramente elevado, hipocalcemia persistente o escalada de calcio IV pese a revisión técnica.'
+    confidence = 'Alta concordancia entre bioquímica, dinámica clínica y hemodinámica.'
   } else if ((ratio >= 2.25 && ratio <= 2.5) || ratio > 2.5 || realDynamicSignals >= 2 || (inputs.highRiskContext && realDynamicSignals >= 1) || technicalChecked || technicalConcern || unexplainedAcidosis) {
-    status = 'ðŸŸ¡ Riesgo intermedio'
+    status = '🟡 Riesgo intermedio'
     level = 'amber'
     const stewartQuiet = acidBase.ph >= 7.32 && acidBase.sbe > -4 && acidBase.sbeUi > -4 && !unexplainedAcidosis
     const isolatedBiochemicalSignal = ratio >= 2.25 && ratio <= 2.5 && !ratioRising && !lactateRising && !vasoRising && stewartQuiet
@@ -240,53 +240,53 @@ function computeArc(inputs, acidBase) {
     const ratioGreyZone = ratio >= 2.30 && ratio <= 2.50
 
     if (metabolicDeteriorationWithUnmeasuredAnions) {
-      status = 'ðŸŸ¡ Deterioro metabÃ³lico en contexto de ARC'
-      title = 'Existe deterioro metabÃ³lico progresivo con aniones no medidos relevantes. La evidencia especÃ­fica de acumulaciÃ³n de citrato es actualmente insuficiente.'
-      confidence = 'Existe deterioro metabÃ³lico relevante; la seÃ±al cÃ¡lcica especÃ­fica de acumulaciÃ³n de citrato es actualmente limitada.'
+      status = '🟡 Deterioro metabólico en contexto de ARC'
+      title = 'Existe deterioro metabólico progresivo con aniones no medidos relevantes. La evidencia específica de acumulación de citrato es actualmente insuficiente.'
+      confidence = 'Existe deterioro metabólico relevante; la señal cálcica específica de acumulación de citrato es actualmente limitada.'
     } else if (contextualWatch) {
       title = severeShockConfounder
-        ? 'Vigilancia reforzada: alto riesgo metabÃ³lico sin evidencia bioquÃ­mica actual de acumulaciÃ³n de citrato'
-        : 'Vigilancia contextual: sin evidencia bioquÃ­mica de acumulaciÃ³n de citrato'
-      confidence = 'Interpretar con cautela: existe contexto de riesgo, pero sin patrÃ³n convergente de acumulaciÃ³n de citrato.'
+        ? 'Vigilancia reforzada: alto riesgo metabólico sin evidencia bioquímica actual de acumulación de citrato'
+        : 'Vigilancia contextual: sin evidencia bioquímica de acumulación de citrato'
+      confidence = 'Interpretar con cautela: existe contexto de riesgo, pero sin patrón convergente de acumulación de citrato.'
     } else if (ratioGreyZone) {
-      title = 'Vigilancia bioquÃ­mica ARC'
-      confidence = 'Ratio tCa/iCa en zona de vigilancia. Requiere reevaluaciÃ³n precoz y anÃ¡lisis de tendencia antes de asumir acumulaciÃ³n de citrato.'
+      title = 'Vigilancia bioquímica ARC'
+      confidence = 'Ratio tCa/iCa en zona de vigilancia. Requiere reevaluación precoz y análisis de tendencia antes de asumir acumulación de citrato.'
     } else {
-      title = isolatedBiochemicalSignal ? 'Vigilancia bioquÃ­mica sin convergencia fisiopatolÃ³gica' : ratio > 2.5 && !ratioRising && !lactateRising && !vasoRising && !inputs.highRiskContext && !unexplainedAcidosis ? 'SeÃ±al bioquÃ­mica compatible con posible metabolismo insuficiente del citrato' : 'SeÃ±ales compatibles con metabolismo insuficiente parcial del citrato'
-      confidence = isolatedBiochemicalSignal ? 'Cautela: existe seÃ±al bioquÃ­mica aislada, pero sin convergencia metabÃ³lica ni dinÃ¡mica.' : ratio > 2.5 && !ratioRising && !lactateRising && !vasoRising && !inputs.highRiskContext && !unexplainedAcidosis ? 'Interpretar en contexto: seÃ±al bioquÃ­mica aislada sin convergencia fisiopatolÃ³gica actual.' : 'Interpretar con cautela: vigilar convergencia de seÃ±ales dinÃ¡micas.'
+      title = isolatedBiochemicalSignal ? 'Vigilancia bioquímica sin convergencia fisiopatológica' : ratio > 2.5 && !ratioRising && !lactateRising && !vasoRising && !inputs.highRiskContext && !unexplainedAcidosis ? 'Señal bioquímica compatible con posible metabolismo insuficiente del citrato' : 'Señales compatibles con metabolismo insuficiente parcial del citrato'
+      confidence = isolatedBiochemicalSignal ? 'Cautela: existe señal bioquímica aislada, pero sin convergencia metabólica ni dinámica.' : ratio > 2.5 && !ratioRising && !lactateRising && !vasoRising && !inputs.highRiskContext && !unexplainedAcidosis ? 'Interpretar en contexto: señal bioquímica aislada sin convergencia fisiopatológica actual.' : 'Interpretar con cautela: vigilar convergencia de señales dinámicas.'
     }
-    action = isolatedBiochemicalSignal ? 'Repetir control precoz y reevaluar tendencia del ratio tCa/iCa y del equilibrio Ã¡cidoâ€“base antes de asumir metabolismo insuficiente del citrato.' : 'Reforzar monitorizaciÃ³n y repetir control precoz en 2â€“4 h, priorizando la evaluaciÃ³n de tendencia.'
+    action = isolatedBiochemicalSignal ? 'Repetir control precoz y reevaluar tendencia del ratio tCa/iCa y del equilibrio ácido–base antes de asumir metabolismo insuficiente del citrato.' : 'Reforzar monitorización y repetir control precoz en 2–4 h, priorizando la evaluación de tendencia.'
   }
 
   if (technicalUnchecked && (ratio >= 2.25 || caIonico < 0.95)) {
-    status = 'ðŸŸ¡ Riesgo intermedio'
+    status = '🟡 Riesgo intermedio'
     level = 'amber'
-    title = ratio > 2.5 ? 'Alta sospecha no confirmada: descartar problema tÃ©cnico de reposiciÃ³n cÃ¡lcica' : 'SeÃ±al cÃ¡lcica de interpretaciÃ³n incierta: descartar problema tÃ©cnico de reposiciÃ³n'
-    action = 'Antes de interpretar la hipocalcemia como seÃ±al de metabolismo insuficiente del citrato, verificar concentraciÃ³n, bomba, velocidad, vÃ­a, conexiÃ³n, permeabilidad y extravasaciÃ³n de la infusiÃ³n de calcio; repetir control tras el check.'
-    confidence = 'Interpretar con cautela: la seÃ±al cÃ¡lcica no es diagnÃ³stica hasta confirmar seguridad tÃ©cnica de la reposiciÃ³n.'
+    title = ratio > 2.5 ? 'Alta sospecha no confirmada: descartar problema técnico de reposición cálcica' : 'Señal cálcica de interpretación incierta: descartar problema técnico de reposición'
+    action = 'Antes de interpretar la hipocalcemia como señal de metabolismo insuficiente del citrato, verificar concentración, bomba, velocidad, vía, conexión, permeabilidad y extravasación de la infusión de calcio; repetir control tras el check.'
+    confidence = 'Interpretar con cautela: la señal cálcica no es diagnóstica hasta confirmar seguridad técnica de la reposición.'
   }
 
   if (citrateBufferExcess) {
-    status = 'ðŸŸ¢ Bajo riesgo'
+    status = '🟢 Bajo riesgo'
     level = 'green'
-    title = 'Metabolismo adecuado del citrato con seÃ±al de exceso de tampÃ³n metabÃ³lico'
-    action = 'Valorar ajustes en la prescripciÃ³n con impacto en la carga neta de tampÃ³n de la tÃ©cnica (flujo de sangre, dosis de citrato, flujo de reposiciÃ³n/diÃ¡lisis), manteniendo monitorizaciÃ³n habitual.'
-    confidence = 'Alta: patrÃ³n compatible con citrato adecuadamente metabolizado, sin seÃ±ales de acumulaciÃ³n.'
+    title = 'Metabolismo adecuado del citrato con señal de exceso de tampón metabólico'
+    action = 'Valorar ajustes en la prescripción con impacto en la carga neta de tampón de la técnica (flujo de sangre, dosis de citrato, flujo de reposición/diálisis), manteniendo monitorización habitual.'
+    confidence = 'Alta: patrón compatible con citrato adecuadamente metabolizado, sin señales de acumulación.'
   }
 
   const why = []
   if (ratio > 2.5) why.push('Ratio tCa/iCa >2.5')
   else if (ratio >= 2.25) why.push('Ratio tCa/iCa en zona de vigilancia')
-  else if (level === 'red' && ratioRising) why.push('Ratio tCa/iCa ascendente (aÃºn no elevado, sospecha basada en dinÃ¡mica clÃ­nica)')
-  else if (level === 'red') why.push('Ratio tCa/iCa aÃºn no elevado: sospecha basada en dinÃ¡mica clÃ­nica')
+  else if (level === 'red' && ratioRising) why.push('Ratio tCa/iCa ascendente (aún no elevado, sospecha basada en dinámica clínica)')
+  else if (level === 'red') why.push('Ratio tCa/iCa aún no elevado: sospecha basada en dinámica clínica')
   else if (ratioRising) why.push('Ratio tCa/iCa ascendente')
   if (lactateRising) why.push('Lactato ascendente')
   if (vasoRising) why.push('Aumento de requerimientos vasoactivos')
-  if (inputs.highRiskContext) why.push('Contexto de alto riesgo metabÃ³lico')
+  if (inputs.highRiskContext) why.push('Contexto de alto riesgo metabólico')
   if (severeShockConfounder) why.push('Lactato extremo en shock profundo: interpretar Stewart con cautela si ratio bajo y estable')
   if (unexplainedAcidosis) why.push('Acidosis no explicada por lactato')
-  if (technicalUnchecked && (ratio >= 2.25 || caIonico < 0.95)) why.push('Hipocalcemia con infusiÃ³n de calcio no verificada: descartar problema tÃ©cnico antes de asumir acumulaciÃ³n')
-  if (technicalChecked) why.push('Hipocalcemia persistente pese a check tÃ©cnico correcto')
+  if (technicalUnchecked && (ratio >= 2.25 || caIonico < 0.95)) why.push('Hipocalcemia con infusión de calcio no verificada: descartar problema técnico antes de asumir acumulación')
+  if (technicalChecked) why.push('Hipocalcemia persistente pese a check técnico correcto')
 
   return { ratio, status, level, title, action, confidence, why, unexplainedAcidosis }
 }
@@ -334,19 +334,7 @@ function computeLongitudinalTrajectory(timeline) {
     return {
       level: 'neutral',
       title: 'Sin trayectoria suficiente',
-      text: 'Guarda al menos dos controles para interpretar evoluciÃ³n longitudinal.',
-      debug: {
-        ratios: finiteSeries(timeline, 'ratio'),
-        calciumIv: finiteSeries(timeline, 'calciumIv'),
-        caIonico: finiteSeries(timeline, 'caIonico'),
-        ratioProgressiveRise: null,
-        globalCitrateConvergence: null,
-        sustainedHighRatioConvergence: null,
-        calciumReplacementEscalating: null,
-        ionizedCalciumFalling: null,
-        redControls: timeline.filter((point) => point.level === 'red').length,
-        timelineAnalysisTitle: 'Sin trayectoria suficiente'
-      }
+      text: 'Guarda al menos dos controles para interpretar evolución longitudinal.'
     }
   }
 
@@ -436,27 +424,14 @@ function computeLongitudinalTrajectory(timeline) {
     summarizeChange('SBE', sbes[0], lastFinite(timeline, 'sbe'), 1)
   ].filter(Boolean)
   const narrative = summaryParts.length
-    ? `Resumen longitudinal automÃ¡tico: ${summaryParts.join('; ')}.`
-    : 'Resumen longitudinal automÃ¡tico: controles seriados guardados, con datos numÃ©ricos incompletos para cuantificar la evoluciÃ³n.'
-  const makeTimelineDebug = (timelineAnalysisTitle) => ({
-    ratios,
-    calciumIv,
-    caIonico: ionizedCalcium,
-    ratioProgressiveRise,
-    globalCitrateConvergence,
-    sustainedHighRatioConvergence,
-    calciumReplacementEscalating,
-    ionizedCalciumFalling,
-    redControls,
-    timelineAnalysisTitle
-  })
+    ? `Resumen longitudinal automático: ${summaryParts.join('; ')}.`
+    : 'Resumen longitudinal automático: controles seriados guardados, con datos numéricos incompletos para cuantificar la evolución.'
 
   if (recoveredAfterTechnicalIssue) {
     return {
       level: 'green',
-      title: 'Trayectoria no convergente para acumulaciÃ³n de citrato',
-      text: `${narrative} Tras la revisiÃ³n tÃ©cnica, el Ãºltimo control mejora sin aumento de reposiciÃ³n cÃ¡lcica; trayectoria no compatible con acumulaciÃ³n sostenida.`,
-      debug: makeTimelineDebug('Trayectoria no convergente para acumulaciÃ³n de citrato')
+      title: 'Trayectoria no convergente para acumulación de citrato',
+      text: `${narrative} Tras la revisión técnica, el último control mejora sin aumento de reposición cálcica; trayectoria no compatible con acumulación sostenida.`,
     }
   }
 
@@ -467,56 +442,53 @@ function computeLongitudinalTrajectory(timeline) {
   ) {
     return {
       level: 'red',
-      title: 'Trayectoria convergente para acumulaciÃ³n de citrato',
-      text: `${narrative} Se detecta una trayectoria compatible con metabolismo insuficiente del citrato, por ascenso progresivo o convergencia global del ratio tCa/iCa junto con seÃ±ales cÃ¡lcicas/metabÃ³licas acompaÃ±antes.`,
-      debug: makeTimelineDebug('Trayectoria convergente para acumulaciÃ³n de citrato')
+      title: 'Trayectoria convergente para acumulación de citrato',
+      text: `${narrative} Se detecta una trayectoria compatible con metabolismo insuficiente del citrato, por ascenso progresivo o convergencia global del ratio tCa/iCa junto con señales cálcicas/metabólicas acompañantes.`,
     }
   }
 
   if (nonConvergentPattern) {
     return {
       level: 'green',
-      title: 'Trayectoria no convergente para acumulaciÃ³n de citrato',
-      text: `${narrative} La evoluciÃ³n seriada no muestra convergencia fisiopatolÃ³gica compatible con acumulaciÃ³n de citrato. Persistencia de contexto de alto riesgo metabÃ³lico con estabilidad de la seÃ±al cÃ¡lcica y ausencia de progresiÃ³n bioquÃ­mica ARC.`,
-      debug: makeTimelineDebug('Trayectoria no convergente para acumulaciÃ³n de citrato')
+      title: 'Trayectoria no convergente para acumulación de citrato',
+      text: `${narrative} La evolución seriada no muestra convergencia fisiopatológica compatible con acumulación de citrato. Persistencia de contexto de alto riesgo metabólico con estabilidad de la señal cálcica y ausencia de progresión bioquímica ARC.`,
     }
   }
 
   return {
     level: 'amber',
     title: 'Trayectoria en vigilancia',
-    text: `${narrative} La serie muestra seÃ±ales intermedias sin patrÃ³n claramente convergente ni no convergente; mantener vigilancia longitudinal y nuevo control precoz segÃºn contexto.`,
-      debug: makeTimelineDebug('Trayectoria en vigilancia')
+    text: `${narrative} La serie muestra señales intermedias sin patrón claramente convergente ni no convergente; mantener vigilancia longitudinal y nuevo control precoz según contexto.`,
   }
 }
 
 function makeClipboardText(inputs, acidBase, arc) {
   const NL = String.fromCharCode(10)
   const timestamp = new Date().toLocaleString('es-ES')
-  const stewartSummary = acidBase?.summary?.map((item) => `â€¢ ${item}`).join(NL) || 'â€¢ Sin interpretaciÃ³n disponible'
+  const stewartSummary = acidBase?.summary?.map((item) => `• ${item}`).join(NL) || '• Sin interpretación disponible'
   const whySummary = arc?.why?.length
-    ? arc.why.map((item) => `â€¢ ${item}`).join(NL)
-    : 'â€¢ Sin seÃ±ales dinÃ¡micas de alarma'
+    ? arc.why.map((item) => `• ${item}`).join(NL)
+    : '• Sin señales dinámicas de alarma'
 
   if (!inputs.crrtArc) {
     return [
       'STEWART LIGHT',
       `Fecha/hora: ${timestamp}`,
       '',
-      'InterpretaciÃ³n fisiopatolÃ³gica:',
+      'Interpretación fisiopatológica:',
       stewartSummary,
       '',
-      'CompensaciÃ³n respiratoria:',
+      'Compensación respiratoria:',
       acidBase?.resp || 'No disponible'
     ].join(NL)
   }
 
-  const ratioText = Number.isFinite(arc?.ratio) ? fmt(arc.ratio, 2) : 'â€”'
+  const ratioText = Number.isFinite(arc?.ratio) ? fmt(arc.ratio, 2) : '—'
 
   const trajectory = []
-  if (inputs.ratioTrend === 'rising') trajectory.push('â€¢ Ratio tCa/iCa ascendente')
-  if (inputs.lactateTrend === 'rising') trajectory.push('â€¢ Lactato ascendente')
-  if (inputs.vasoTrend === 'rising') trajectory.push('â€¢ Aumento de requerimientos vasoactivos')
+  if (inputs.ratioTrend === 'rising') trajectory.push('• Ratio tCa/iCa ascendente')
+  if (inputs.lactateTrend === 'rising') trajectory.push('• Lactato ascendente')
+  if (inputs.vasoTrend === 'rising') trajectory.push('• Aumento de requerimientos vasoactivos')
 
   let stewartEnhanced = (acidBase?.summary || []).filter(
     (s) =>
@@ -525,12 +497,12 @@ function makeClipboardText(inputs, acidBase, arc) {
   )
 
   const hasEnrichedUnmeasuredAnionsMessage = stewartEnhanced.some(
-    (s) => s.includes('ðŸ§ª') && s.includes('aniones no medidos')
+    (s) => s.includes('🧪') && s.includes('aniones no medidos')
   )
 
   if (arc?.unexplainedAcidosis && !hasEnrichedUnmeasuredAnionsMessage) {
     stewartEnhanced.push(
-      'Persistencia de acidosis residual no completamente explicada por lactato, compatible con aniones no medidos adicionales en este contexto clÃ­nico.'
+      'Persistencia de acidosis residual no completamente explicada por lactato, compatible con aniones no medidos adicionales en este contexto clínico.'
     )
   }
 
@@ -543,8 +515,8 @@ function makeClipboardText(inputs, acidBase, arc) {
 
     const respiratoryItems = stewartEnhanced.filter(
       (s) =>
-        s.includes('CompensaciÃ³n respiratoria') ||
-        s.includes('PCOâ‚‚') ||
+        s.includes('Compensación respiratoria') ||
+        s.includes('PCO₂') ||
         s.includes('alcalosis respiratoria') ||
         s.includes('acidosis respiratoria')
     )
@@ -567,24 +539,24 @@ function makeClipboardText(inputs, acidBase, arc) {
     `Fecha/hora: ${timestamp}`,
     '',
     'Estado:',
-    arc?.status || 'ðŸŸ¢ Bajo riesgo',
+    arc?.status || '🟢 Bajo riesgo',
     arc?.title || '',
     `Ratio tCa/iCa: ${ratioText}`,
     '',
-    'Trayectoria fisiopatolÃ³gica:',
-    trajectory.length ? trajectory.join(NL) : 'â€¢ Sin seÃ±ales dinÃ¡micas relevantes',
+    'Trayectoria fisiopatológica:',
+    trajectory.length ? trajectory.join(NL) : '• Sin señales dinámicas relevantes',
     '',
-    'Â¿Por quÃ©?',
+    '¿Por qué?',
     whySummary,
     '',
     'Stewart Light:',
-    stewartEnhanced.map((item) => `â€¢ ${item}`).join(NL),
+    stewartEnhanced.map((item) => `• ${item}`).join(NL),
     '',
-    'AcciÃ³n sugerida:',
-    arc?.action || 'Continuar monitorizaciÃ³n habitual segÃºn protocolo.',
+    'Acción sugerida:',
+    arc?.action || 'Continuar monitorización habitual según protocolo.',
     '',
-    'Confianza fisiopatolÃ³gica:',
-    arc?.confidence || 'Alta si la evoluciÃ³n permanece estable.'
+    'Confianza fisiopatológica:',
+    arc?.confidence || 'Alta si la evolución permanece estable.'
   ].join(NL)
 }
 
@@ -728,8 +700,8 @@ export default function ArcSafetyPremiumMockup() {
     <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4 flex items-center justify-between gap-3">
       <div className="text-slate-200 font-medium">{label}</div>
       <div className="flex gap-2">
-        <Chip active={inputs[id] === 'stable'} onClick={() => set(id, 'stable')}>â¬‡ Estable</Chip>
-        <Chip active={inputs[id] === 'rising'} onClick={() => set(id, 'rising')} tone="red">â¬† Ascendente</Chip>
+        <Chip active={inputs[id] === 'stable'} onClick={() => set(id, 'stable')}>⬇ Estable</Chip>
+        <Chip active={inputs[id] === 'rising'} onClick={() => set(id, 'rising')} tone="red">⬆ Ascendente</Chip>
       </div>
     </div>
   )
@@ -740,76 +712,63 @@ export default function ArcSafetyPremiumMockup() {
         <div className="rounded-[34px] bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 border border-slate-700/50 p-6 shadow-[0_0_80px_rgba(15,23,42,0.5)]">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 text-cyan-300 text-sm font-medium mb-2"><span>Stewart Light</span><span>â€¢</span><span>TCRR / ARC Safety Monitor</span></div>
+              <div className="flex items-center gap-2 text-cyan-300 text-sm font-medium mb-2"><span>Stewart Light</span><span>•</span><span>TCRR / ARC Safety Monitor</span></div>
               <h1 className="text-3xl md:text-5xl font-bold tracking-tight">ARC Safety Assistant</h1>
-              <div className="mt-3 text-sm text-slate-400">Version v4.5 Expert Review Â· Educational & Research Use Only</div>
-              <p className="text-slate-400 mt-2 max-w-xl">Asistente clÃ­nico bedside para razonamiento fisiopatolÃ³gico del equilibrio Ã¡cidoâ€“base y seguridad de ARC.</p>
+              <div className="mt-3 text-sm text-slate-400">Version v4.5 Expert Review · Educational & Research Use Only</div>
+              <p className="text-slate-400 mt-2 max-w-xl">Asistente clínico bedside para razonamiento fisiopatológico del equilibrio ácido–base y seguridad de ARC.</p>
             </div>
             <div className="bg-slate-900/70 border border-slate-700 rounded-3xl p-2 flex gap-2 self-start">
-              <button onClick={() => setMode('clinical')} className={`px-5 py-3 rounded-2xl font-semibold ${mode === 'clinical' ? 'bg-cyan-700 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>ðŸ©º ClÃ­nico</button>
-              <button onClick={() => setMode('teaching')} className={`px-5 py-3 rounded-2xl font-semibold ${mode === 'teaching' ? 'bg-cyan-700 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>ðŸŽ“ Docente</button>
+              <button onClick={() => setMode('clinical')} className={`px-5 py-3 rounded-2xl font-semibold ${mode === 'clinical' ? 'bg-cyan-700 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>🩺 Clínico</button>
+              <button onClick={() => setMode('teaching')} className={`px-5 py-3 rounded-2xl font-semibold ${mode === 'teaching' ? 'bg-cyan-700 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>🎓 Docente</button>
             </div>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-6 mt-6">
           <div className="space-y-5">
-            <Card title="GasometrÃ­a arterial"><div className="grid grid-cols-2 gap-4">{renderField('ph', 'pH')}{renderField('pco2', 'pCOâ‚‚')}{renderField('hco3', 'HCOâ‚ƒâ»')}{renderField('sbe', 'SBE')}</div></Card>
-            <Card title="Electrolitos y metabolismo"><div className="grid grid-cols-2 gap-4">{renderField('na', 'Naâº')}{renderField('cl', 'Clâ»')}{renderField('alb', 'AlbÃºmina (g/L)')}{renderField('lactate', 'Lactato')}</div></Card>
+            <Card title="Gasometría arterial"><div className="grid grid-cols-2 gap-4">{renderField('ph', 'pH')}{renderField('pco2', 'pCO₂')}{renderField('hco3', 'HCO₃⁻')}{renderField('sbe', 'SBE')}</div></Card>
+            <Card title="Electrolitos y metabolismo"><div className="grid grid-cols-2 gap-4">{renderField('na', 'Na⁺')}{renderField('cl', 'Cl⁻')}{renderField('alb', 'Albúmina (g/L)')}{renderField('lactate', 'Lactato')}</div></Card>
 
             <Card title="ARC Safety Monitor">
               <div className="flex items-center justify-between rounded-2xl bg-slate-800 p-4 mb-5 border border-slate-700">
-                <div><div className="font-semibold">TCRR + ARC</div><div className="text-slate-400 text-sm">Activar mÃ³dulo de seguridad de citrato</div></div>
+                <div><div className="font-semibold">TCRR + ARC</div><div className="text-slate-400 text-sm">Activar módulo de seguridad de citrato</div></div>
                 <button onClick={() => set('crrtArc', !inputs.crrtArc)} className={`w-16 h-9 rounded-full relative transition ${inputs.crrtArc ? 'bg-cyan-700' : 'bg-slate-700'}`}><div className={`absolute top-1 w-7 h-7 rounded-full bg-white transition ${inputs.crrtArc ? 'right-1' : 'left-1'}`} /></button>
               </div>
               {inputs.crrtArc && <div className="space-y-5">
-                <div className="grid grid-cols-2 gap-4">{renderField('caTotal', 'Ca total')}{renderField('caIonico', 'Ca iÃ³nico')}{renderField('calciumIv', 'Calcio IV (mmol/h)')}</div>
-                <div className="space-y-3"><div className="text-slate-300 font-medium">Tendencias fisiopatolÃ³gicas</div><TrendRow label="Ratio tCa/iCa" id="ratioTrend" /><TrendRow label="Lactato" id="lactateTrend" /><TrendRow label="Vasopresores / inotropos" id="vasoTrend" /></div>
-                <div className="rounded-2xl bg-slate-800 border border-slate-700 p-4 flex items-center justify-between"><div><div className="font-medium">Alto riesgo metabÃ³lico</div><div className="text-sm text-slate-400">Shock / hipoperfusiÃ³n / hÃ­gado / ECMO</div></div><button onClick={() => set('highRiskContext', !inputs.highRiskContext)} className={`w-12 h-7 rounded-full relative ${inputs.highRiskContext ? 'bg-cyan-700' : 'bg-slate-700'}`}><div className={`absolute top-1 w-5 h-5 rounded-full bg-white transition ${inputs.highRiskContext ? 'right-1' : 'left-1'}`} /></button></div>
-                <div><div className="text-slate-300 font-medium mb-3">Check tÃ©cnico de infusiÃ³n de calcio</div><div className="grid grid-cols-1 gap-2"><Chip active={inputs.technicalAlarm === 'no'} onClick={() => set('technicalAlarm', 'no')}>Check correcto / sin incidencias</Chip><Chip active={inputs.technicalAlarm === 'yes_unchecked'} onClick={() => set('technicalAlarm', 'yes_unchecked')} tone="amber">No verificado todavÃ­a</Chip><Chip active={inputs.technicalAlarm === 'yes_checked'} onClick={() => set('technicalAlarm', 'yes_checked')} tone="red">Check correcto, pero persiste hipocalcemia</Chip></div></div>
-                <div className={`rounded-2xl border p-4 flex items-center justify-between ${arc?.unexplainedAcidosis ? 'border-red-900/40 bg-red-950/20' : 'border-emerald-900/40 bg-emerald-950/20'}`}><div><div className={`font-medium ${arc?.unexplainedAcidosis ? 'text-red-200' : 'text-emerald-200'}`}>Acidosis no explicada por lactato</div><div className="text-sm text-slate-400">SeÃ±al mayor ARC Â· autodetectada desde Stewart Light</div></div><div className={`text-sm font-bold ${arc?.unexplainedAcidosis ? 'text-red-300' : 'text-emerald-300'}`}>{arc?.unexplainedAcidosis ? 'ON' : 'OFF'}</div></div>
+                <div className="grid grid-cols-2 gap-4">{renderField('caTotal', 'Ca total')}{renderField('caIonico', 'Ca iónico')}{renderField('calciumIv', 'Calcio IV (mmol/h)')}</div>
+                <div className="space-y-3"><div className="text-slate-300 font-medium">Tendencias fisiopatológicas</div><TrendRow label="Ratio tCa/iCa" id="ratioTrend" /><TrendRow label="Lactato" id="lactateTrend" /><TrendRow label="Vasopresores / inotropos" id="vasoTrend" /></div>
+                <div className="rounded-2xl bg-slate-800 border border-slate-700 p-4 flex items-center justify-between"><div><div className="font-medium">Alto riesgo metabólico</div><div className="text-sm text-slate-400">Shock / hipoperfusión / hígado / ECMO</div></div><button onClick={() => set('highRiskContext', !inputs.highRiskContext)} className={`w-12 h-7 rounded-full relative ${inputs.highRiskContext ? 'bg-cyan-700' : 'bg-slate-700'}`}><div className={`absolute top-1 w-5 h-5 rounded-full bg-white transition ${inputs.highRiskContext ? 'right-1' : 'left-1'}`} /></button></div>
+                <div><div className="text-slate-300 font-medium mb-3">Check técnico de infusión de calcio</div><div className="grid grid-cols-1 gap-2"><Chip active={inputs.technicalAlarm === 'no'} onClick={() => set('technicalAlarm', 'no')}>Check correcto / sin incidencias</Chip><Chip active={inputs.technicalAlarm === 'yes_unchecked'} onClick={() => set('technicalAlarm', 'yes_unchecked')} tone="amber">No verificado todavía</Chip><Chip active={inputs.technicalAlarm === 'yes_checked'} onClick={() => set('technicalAlarm', 'yes_checked')} tone="red">Check correcto, pero persiste hipocalcemia</Chip></div></div>
+                <div className={`rounded-2xl border p-4 flex items-center justify-between ${arc?.unexplainedAcidosis ? 'border-red-900/40 bg-red-950/20' : 'border-emerald-900/40 bg-emerald-950/20'}`}><div><div className={`font-medium ${arc?.unexplainedAcidosis ? 'text-red-200' : 'text-emerald-200'}`}>Acidosis no explicada por lactato</div><div className="text-sm text-slate-400">Señal mayor ARC · autodetectada desde Stewart Light</div></div><div className={`text-sm font-bold ${arc?.unexplainedAcidosis ? 'text-red-300' : 'text-emerald-300'}`}>{arc?.unexplainedAcidosis ? 'ON' : 'OFF'}</div></div>
               </div>}
             </Card>
           </div>
 
           <div className="space-y-5 lg:sticky lg:top-6 h-fit">
             <div className={`rounded-[34px] bg-gradient-to-br ${heroClasses} p-6`}>
-              <div className={`${accent} text-sm uppercase tracking-[0.2em] font-semibold mb-3`}>{inputs.crrtArc ? 'ARC Safety' : 'Equilibrio Ã¡cidoâ€“base'}</div>
-              <div className="text-4xl md:text-5xl font-black tracking-tight text-white">{inputs.crrtArc ? (arc?.status || 'ðŸŸ¢ Bajo riesgo') : 'Stewart Light'}</div>
-              <div className="mt-4"><div className="text-xl font-semibold text-slate-100 leading-tight">{inputs.crrtArc ? (arc?.title || 'PatrÃ³n compatible con metabolismo adecuado del citrato') : 'InterpretaciÃ³n fisiopatolÃ³gica del trastorno metabÃ³lico'}</div>{inputs.crrtArc && arc && <p className="text-slate-300 text-lg mt-3 leading-relaxed">Ratio tCa/iCa = {fmt(arc.ratio, 2)}</p>}{!inputs.crrtArc && acidBase && <p className="text-slate-300 text-lg mt-3 leading-relaxed">{acidBase.resp}</p>}</div>
-              <div className="mt-5 rounded-[24px] border border-cyan-900/30 bg-cyan-950/20 p-5"><div className="text-cyan-300 font-semibold mb-2">AcciÃ³n sugerida</div><div className="text-slate-300 leading-7">{inputs.crrtArc ? (arc?.action || 'Continuar monitorizaciÃ³n habitual segÃºn protocolo.') : 'Integrar el patrÃ³n Stewart Light con la situaciÃ³n clÃ­nica, tendencia evolutiva y causa probable del trastorno Ã¡cidoâ€“base.'}</div></div>
-              <div className="mt-6 rounded-[28px] bg-slate-900/50 border border-slate-700 p-5"><div className="font-semibold text-cyan-300 mb-3">Â¿Por quÃ©?</div><div className="space-y-3">{(inputs.crrtArc ? (arc?.why?.length ? arc.why : ['Sin seÃ±ales dinÃ¡micas de alarma']) : (acidBase?.summary?.length ? acidBase.summary : ['Sin interpretaciÃ³n disponible'])).map((item) => <div key={item} className="flex items-start gap-3 text-slate-200"><div className={`w-2.5 h-2.5 rounded-full mt-2 ${heroLevel === 'red' ? 'bg-red-400' : heroLevel === 'amber' ? 'bg-amber-400' : 'bg-emerald-400'}`} /><span>{item}</span></div>)}</div></div>
-              <div className="mt-5 rounded-[24px] border border-emerald-900/30 bg-emerald-950/20 p-4 flex items-center justify-between gap-4"><div><div className="text-emerald-300 font-semibold">Confianza fisiopatolÃ³gica</div><div className="text-slate-400 text-sm mt-1">{inputs.crrtArc ? (arc?.confidence || 'Alta si la evoluciÃ³n permanece estable.') : 'InterpretaciÃ³n basada en Boston, SID, albÃºmina y componente de iones no medidos.'}</div></div><div className="text-emerald-300 font-bold text-lg shrink-0">{inputs.crrtArc ? (heroLevel === 'red' ? 'Alta' : heroLevel === 'amber' ? 'Cautela' : 'Estable') : 'Explicable'}</div></div>
+              <div className={`${accent} text-sm uppercase tracking-[0.2em] font-semibold mb-3`}>{inputs.crrtArc ? 'ARC Safety' : 'Equilibrio ácido–base'}</div>
+              <div className="text-4xl md:text-5xl font-black tracking-tight text-white">{inputs.crrtArc ? (arc?.status || '🟢 Bajo riesgo') : 'Stewart Light'}</div>
+              <div className="mt-4"><div className="text-xl font-semibold text-slate-100 leading-tight">{inputs.crrtArc ? (arc?.title || 'Patrón compatible con metabolismo adecuado del citrato') : 'Interpretación fisiopatológica del trastorno metabólico'}</div>{inputs.crrtArc && arc && <p className="text-slate-300 text-lg mt-3 leading-relaxed">Ratio tCa/iCa = {fmt(arc.ratio, 2)}</p>}{!inputs.crrtArc && acidBase && <p className="text-slate-300 text-lg mt-3 leading-relaxed">{acidBase.resp}</p>}</div>
+              <div className="mt-5 rounded-[24px] border border-cyan-900/30 bg-cyan-950/20 p-5"><div className="text-cyan-300 font-semibold mb-2">Acción sugerida</div><div className="text-slate-300 leading-7">{inputs.crrtArc ? (arc?.action || 'Continuar monitorización habitual según protocolo.') : 'Integrar el patrón Stewart Light con la situación clínica, tendencia evolutiva y causa probable del trastorno ácido–base.'}</div></div>
+              <div className="mt-6 rounded-[28px] bg-slate-900/50 border border-slate-700 p-5"><div className="font-semibold text-cyan-300 mb-3">¿Por qué?</div><div className="space-y-3">{(inputs.crrtArc ? (arc?.why?.length ? arc.why : ['Sin señales dinámicas de alarma']) : (acidBase?.summary?.length ? acidBase.summary : ['Sin interpretación disponible'])).map((item) => <div key={item} className="flex items-start gap-3 text-slate-200"><div className={`w-2.5 h-2.5 rounded-full mt-2 ${heroLevel === 'red' ? 'bg-red-400' : heroLevel === 'amber' ? 'bg-amber-400' : 'bg-emerald-400'}`} /><span>{item}</span></div>)}</div></div>
+              <div className="mt-5 rounded-[24px] border border-emerald-900/30 bg-emerald-950/20 p-4 flex items-center justify-between gap-4"><div><div className="text-emerald-300 font-semibold">Confianza fisiopatológica</div><div className="text-slate-400 text-sm mt-1">{inputs.crrtArc ? (arc?.confidence || 'Alta si la evolución permanece estable.') : 'Interpretación basada en Boston, SID, albúmina y componente de iones no medidos.'}</div></div><div className="text-emerald-300 font-bold text-lg shrink-0">{inputs.crrtArc ? (heroLevel === 'red' ? 'Alta' : heroLevel === 'amber' ? 'Cautela' : 'Estable') : 'Explicable'}</div></div>
             </div>
 
             <div className="rounded-[28px] border border-slate-700 bg-slate-900/70 p-5">
-              <div className="flex items-center justify-between"><div><div className="text-lg font-semibold">InterpretaciÃ³n fisiopatolÃ³gica integrada</div><div className="text-slate-400 text-sm mt-1">Resumen bedside listo para sesiÃ³n clÃ­nica</div></div><button onClick={copyClinicalSummary} className={`rounded-2xl px-4 py-2 font-medium transition ${copied === 'ok' ? 'bg-emerald-700 text-white' : copied === 'fail' ? 'bg-red-700 text-white' : 'bg-cyan-700 text-white hover:bg-cyan-600'}`}>{copied === 'ok' ? 'âœ… Resumen copiado' : copied === 'fail' ? 'âš ï¸ No se pudo copiar' : 'ðŸ“‹ Copiar'}</button></div>
-              <p className="mt-4 text-slate-300 leading-7">{inputs.crrtArc ? (arc?.level === 'red' ? 'Paciente con patrÃ³n dinÃ¡mico compatible con metabolismo insuficiente del citrato en contexto de TCRR + ARC. La sospecha se apoya en la convergencia de seÃ±ales mayores y dinÃ¡micas, no en un Ãºnico valor aislado. Considerar suspensiÃ³n de ARC o transiciÃ³n temporal a otra estrategia de anticoagulaciÃ³n si el patrÃ³n progresa o no revierte tras optimizaciÃ³n hemodinÃ¡mica y revisiÃ³n tÃ©cnica.' : arc?.level === 'amber' ? 'Existen seÃ±ales de vigilancia que aconsejan reevaluaciÃ³n precoz y seguimiento de tendencia antes de asumir acumulaciÃ³n de citrato.' : 'El patrÃ³n actual es compatible con metabolismo adecuado del citrato en este control, siempre integrado con contexto clÃ­nico y tendencia evolutiva.') : (acidBase?.summary?.join(' ') || 'InterpretaciÃ³n Ã¡cidoâ€“base no disponible.')}</p>
+              <div className="flex items-center justify-between"><div><div className="text-lg font-semibold">Interpretación fisiopatológica integrada</div><div className="text-slate-400 text-sm mt-1">Resumen bedside listo para sesión clínica</div></div><button onClick={copyClinicalSummary} className={`rounded-2xl px-4 py-2 font-medium transition ${copied === 'ok' ? 'bg-emerald-700 text-white' : copied === 'fail' ? 'bg-red-700 text-white' : 'bg-cyan-700 text-white hover:bg-cyan-600'}`}>{copied === 'ok' ? '✅ Resumen copiado' : copied === 'fail' ? '⚠️ No se pudo copiar' : '📋 Copiar'}</button></div>
+              <p className="mt-4 text-slate-300 leading-7">{inputs.crrtArc ? (arc?.level === 'red' ? 'Paciente con patrón dinámico compatible con metabolismo insuficiente del citrato en contexto de TCRR + ARC. La sospecha se apoya en la convergencia de señales mayores y dinámicas, no en un único valor aislado. Considerar suspensión de ARC o transición temporal a otra estrategia de anticoagulación si el patrón progresa o no revierte tras optimización hemodinámica y revisión técnica.' : arc?.level === 'amber' ? 'Existen señales de vigilancia que aconsejan reevaluación precoz y seguimiento de tendencia antes de asumir acumulación de citrato.' : 'El patrón actual es compatible con metabolismo adecuado del citrato en este control, siempre integrado con contexto clínico y tendencia evolutiva.') : (acidBase?.summary?.join(' ') || 'Interpretación ácido–base no disponible.')}</p>
             </div>
 
             {inputs.crrtArc && <div className="rounded-[28px] border border-slate-700 bg-slate-900/70 p-5">
-              <div className="flex items-center justify-between mb-4 gap-4"><div><div className="text-lg font-semibold">ARC Timeline</div><div className="text-slate-400 text-sm mt-1">Controles seriados Â· la acumulaciÃ³n de citrato es una trayectoria</div></div><div className="flex gap-2"><button onClick={saveCurrentControl} className="rounded-2xl px-3 py-2 bg-cyan-700 text-sm font-medium">âž• Guardar</button><button onClick={resetTimeline} className="rounded-2xl px-3 py-2 bg-slate-800 border border-slate-700 text-sm font-medium">ðŸ—‘ Reiniciar</button></div></div>
-              {timeline.length === 0 ? <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4 text-slate-400 text-sm leading-6">Guarda el control actual para iniciar la evoluciÃ³n. No se almacenan datos identificativos.</div> : <div className="space-y-2"><div className="grid grid-cols-8 gap-2 text-xs text-slate-400 mb-2"><div>Hora</div><div className="text-center">Lactato</div><div className="text-center">tCa/iCa</div><div className="text-center">Ca IV</div><div className="text-center">SBE</div><div className="text-center">Riesgo</div><div className="text-center">Contexto</div><div className="text-center">TÃ©cnica</div></div>{timeline.map((point) => <div key={point.id} className="grid grid-cols-8 gap-2 items-center rounded-2xl bg-slate-800 border border-slate-700 px-3 py-3 text-sm"><div className="font-medium text-slate-200">{point.time}</div><div className="text-center text-slate-300">{fmt(point.lactate, 1)}</div><div className="text-center text-slate-300">{fmt(point.ratio, 2)}</div><div className="text-center text-slate-300">{fmt(point.calciumIv, 1)}</div><div className="text-center text-slate-300">{fmt(point.sbe, 1)}</div><div className={`text-center text-xs font-medium ${point.level === 'red' ? 'text-red-300' : point.level === 'amber' ? 'text-amber-300' : 'text-emerald-300'}`}>{point.status}</div><div className="text-center text-xs text-slate-300">{point.highRiskContext ? 'âš  Riesgo' : 'â€”'}</div><div className="text-center text-xs text-slate-300">{point.technicalAlarm === 'yes_unchecked' ? 'âš  No verif.' : point.technicalAlarm === 'yes_checked' ? 'ðŸ”´ Persiste' : 'âœ” OK'}</div></div>)}</div>}
+              <div className="flex items-center justify-between mb-4 gap-4"><div><div className="text-lg font-semibold">ARC Timeline</div><div className="text-slate-400 text-sm mt-1">Controles seriados · la acumulación de citrato es una trayectoria</div></div><div className="flex gap-2"><button onClick={saveCurrentControl} className="rounded-2xl px-3 py-2 bg-cyan-700 text-sm font-medium">➕ Guardar</button><button onClick={resetTimeline} className="rounded-2xl px-3 py-2 bg-slate-800 border border-slate-700 text-sm font-medium">🗑 Reiniciar</button></div></div>
+              {timeline.length === 0 ? <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4 text-slate-400 text-sm leading-6">Guarda el control actual para iniciar la evolución. No se almacenan datos identificativos.</div> : <div className="space-y-2"><div className="grid grid-cols-8 gap-2 text-xs text-slate-400 mb-2"><div>Hora</div><div className="text-center">Lactato</div><div className="text-center">tCa/iCa</div><div className="text-center">Ca IV</div><div className="text-center">SBE</div><div className="text-center">Riesgo</div><div className="text-center">Contexto</div><div className="text-center">Técnica</div></div>{timeline.map((point) => <div key={point.id} className="grid grid-cols-8 gap-2 items-center rounded-2xl bg-slate-800 border border-slate-700 px-3 py-3 text-sm"><div className="font-medium text-slate-200">{point.time}</div><div className="text-center text-slate-300">{fmt(point.lactate, 1)}</div><div className="text-center text-slate-300">{fmt(point.ratio, 2)}</div><div className="text-center text-slate-300">{fmt(point.calciumIv, 1)}</div><div className="text-center text-slate-300">{fmt(point.sbe, 1)}</div><div className={`text-center text-xs font-medium ${point.level === 'red' ? 'text-red-300' : point.level === 'amber' ? 'text-amber-300' : 'text-emerald-300'}`}>{point.status}</div><div className="text-center text-xs text-slate-300">{point.highRiskContext ? '⚠ Riesgo' : '—'}</div><div className="text-center text-xs text-slate-300">{point.technicalAlarm === 'yes_unchecked' ? '⚠ No verif.' : point.technicalAlarm === 'yes_checked' ? '🔴 Persiste' : '✔ OK'}</div></div>)}</div>}
               <div className={`mt-4 rounded-2xl border p-4 ${timelineAnalysis.level === 'red' ? 'border-red-900/30 bg-red-950/20' : timelineAnalysis.level === 'amber' ? 'border-amber-900/30 bg-amber-950/20' : timelineAnalysis.level === 'green' ? 'border-emerald-900/30 bg-emerald-950/20' : 'border-slate-700 bg-slate-800'}`}><div className={`${timelineAnalysis.level === 'red' ? 'text-red-300' : timelineAnalysis.level === 'amber' ? 'text-amber-300' : timelineAnalysis.level === 'green' ? 'text-emerald-300' : 'text-slate-300'} font-semibold mb-1`}>{timelineAnalysis.title}</div><div className="text-slate-300 text-sm leading-6">{timelineAnalysis.text}</div></div>
-              {timeline.length > 0 && timelineAnalysis.debug && <div className="mt-3 rounded-2xl border border-fuchsia-900/40 bg-fuchsia-950/20 p-4 text-xs text-slate-300 leading-6">
-                <div className="text-fuchsia-300 font-semibold mb-2">DEBUG TIMELINE v4.6</div>
-                <div>ratios: {timelineAnalysis.debug.ratios.map((v) => fmt(v, 2)).join(' -> ') || '—'}</div>
-                <div>calciumIv: {timelineAnalysis.debug.calciumIv.map((v) => fmt(v, 1)).join(' -> ') || '—'}</div>
-                <div>caIonico: {timelineAnalysis.debug.caIonico.map((v) => fmt(v, 2)).join(' -> ') || '—'}</div>
-                <div>ratioProgressiveRise: {String(timelineAnalysis.debug.ratioProgressiveRise)}</div>
-                <div>globalCitrateConvergence: {String(timelineAnalysis.debug.globalCitrateConvergence)}</div>
-                <div>sustainedHighRatioConvergence: {String(timelineAnalysis.debug.sustainedHighRatioConvergence)}</div>
-                <div>calciumReplacementEscalating: {String(timelineAnalysis.debug.calciumReplacementEscalating)}</div>
-                <div>ionizedCalciumFalling: {String(timelineAnalysis.debug.ionizedCalciumFalling)}</div>
-                <div>redControls: {timelineAnalysis.debug.redControls}</div>
-                <div>timelineAnalysis.title: {timelineAnalysis.title}</div>
-              </div>}
-              <div className="mt-3 rounded-2xl border border-cyan-900/30 bg-cyan-950/20 p-4"><div className="text-cyan-300 font-semibold mb-1">Regla de seguridad</div><div className="text-slate-300 text-sm leading-6">El aumento de compensaciÃ³n de calcio IV no implica acumulaciÃ³n por sÃ­ solo: primero verificar concentraciÃ³n, bomba, velocidad, vÃ­a, conexiÃ³n, permeabilidad y extravasaciÃ³n.</div></div>
+              <div className="mt-3 rounded-2xl border border-cyan-900/30 bg-cyan-950/20 p-4"><div className="text-cyan-300 font-semibold mb-1">Regla de seguridad</div><div className="text-slate-300 text-sm leading-6">El aumento de compensación de calcio IV no implica acumulación por sí solo: primero verificar concentración, bomba, velocidad, vía, conexión, permeabilidad y extravasación.</div></div>
             </div>}
 
             <div className="rounded-[28px] border border-slate-700 bg-slate-900/70 p-5">
-              <div className="flex items-center justify-between mb-4"><div><div className="font-semibold text-lg">Equilibrio Ã¡cidoâ€“base</div><div className="text-slate-400 text-sm">Motor fisiopatolÃ³gico que alimenta ARC Safety</div></div><div className="text-cyan-300 font-medium">{mode === 'teaching' ? 'Docente' : 'Expandir'}</div></div>
-              {acidBase && <div className="space-y-3"><div className="rounded-[24px] border border-slate-700 bg-slate-900/60 p-4"><div className="font-medium text-slate-200 mb-4">Resumen metabÃ³lico (Stewart Light)</div><div className="space-y-3"><div className="rounded-2xl bg-slate-800 border border-slate-700 p-4 flex items-start gap-4"><div className="text-2xl">ðŸ«</div><div><div className="font-medium text-slate-100">Boston Â· pCOâ‚‚ esperada {fmt(acidBase.expectedPco2)} Â±2</div><div className="text-slate-400 text-sm mt-1">{acidBase.resp}</div></div></div><Metric label="SBE_SID" value={acidBase.sbeSid} color="text-cyan-300" text={acidBase.sbeSid <= -3 ? 'Acidosis por bajo SID / hipercloremia relativa' : acidBase.sbeSid >= 3 ? (inputs.crrtArc && acidBase.ph > 7.45 && acidBase.hco3 > 30 ? 'Alto SID en TCRR + ARC: compatible con exceso de carga tampÃ³n por citrato adecuadamente metabolizado' : 'Alcalosis por alto SID / hipocloremia relativa') : 'Efecto SID pequeÃ±o'} /><Metric label="SBE_Alb" value={acidBase.sbeAlb} color="text-amber-300" text={acidBase.sbeAlb >= 2 ? 'Hipoalbuminemia con efecto alcalinizante' : 'Efecto de albÃºmina pequeÃ±o'} /><Metric label="SBE_UI" value={acidBase.sbeUi} color="text-red-300" text={acidBase.unexplainedAcidosis ? 'Aniones no medidos residuales tras lactato' : acidBase.sbeUi <= -4 && Number.isFinite(acidBase.lactate) && acidBase.lactate >= 2 && Math.abs(acidBase.uiResidual) < 3 ? 'Componente UI dominante explicado predominantemente por lactato' : Number.isFinite(acidBase.uiResidual) && acidBase.uiResidual <= -4 && acidBase.uiResidual > -6 ? `Residual moderado tras lactato â‰ˆ ${fmt(acidBase.uiResidual)}` : 'Componente UI no dominante'} /></div></div>{mode === 'teaching' && <div className="rounded-2xl border border-cyan-900/30 bg-cyan-950/20 p-4 text-sm text-slate-300 leading-6"><div className="text-cyan-300 font-semibold mb-1">Modo docente</div><div>SBE_SID = (Naâˆ’Cl) âˆ’ referencia pH-ajustada = {fmt(acidBase.naCl)} âˆ’ {fmt(acidBase.sidRef)} = {fmt(acidBase.sbeSid)}</div><div>SBE_Alb = 0.3 Ã— (40 âˆ’ albÃºmina) = {fmt(acidBase.sbeAlb)}</div><div>SBE_UI = SBE âˆ’ SBE_SID âˆ’ SBE_Alb = {fmt(acidBase.sbeUi)}</div><div>UI residual tras lactato â‰ˆ {fmt(acidBase.uiResidual)}</div></div>}</div>}
+              <div className="flex items-center justify-between mb-4"><div><div className="font-semibold text-lg">Equilibrio ácido–base</div><div className="text-slate-400 text-sm">Motor fisiopatológico que alimenta ARC Safety</div></div><div className="text-cyan-300 font-medium">{mode === 'teaching' ? 'Docente' : 'Expandir'}</div></div>
+              {acidBase && <div className="space-y-3"><div className="rounded-[24px] border border-slate-700 bg-slate-900/60 p-4"><div className="font-medium text-slate-200 mb-4">Resumen metabólico (Stewart Light)</div><div className="space-y-3"><div className="rounded-2xl bg-slate-800 border border-slate-700 p-4 flex items-start gap-4"><div className="text-2xl">🫁</div><div><div className="font-medium text-slate-100">Boston · pCO₂ esperada {fmt(acidBase.expectedPco2)} ±2</div><div className="text-slate-400 text-sm mt-1">{acidBase.resp}</div></div></div><Metric label="SBE_SID" value={acidBase.sbeSid} color="text-cyan-300" text={acidBase.sbeSid <= -3 ? 'Acidosis por bajo SID / hipercloremia relativa' : acidBase.sbeSid >= 3 ? (inputs.crrtArc && acidBase.ph > 7.45 && acidBase.hco3 > 30 ? 'Alto SID en TCRR + ARC: compatible con exceso de carga tampón por citrato adecuadamente metabolizado' : 'Alcalosis por alto SID / hipocloremia relativa') : 'Efecto SID pequeño'} /><Metric label="SBE_Alb" value={acidBase.sbeAlb} color="text-amber-300" text={acidBase.sbeAlb >= 2 ? 'Hipoalbuminemia con efecto alcalinizante' : 'Efecto de albúmina pequeño'} /><Metric label="SBE_UI" value={acidBase.sbeUi} color="text-red-300" text={acidBase.unexplainedAcidosis ? 'Aniones no medidos residuales tras lactato' : acidBase.sbeUi <= -4 && Number.isFinite(acidBase.lactate) && acidBase.lactate >= 2 && Math.abs(acidBase.uiResidual) < 3 ? 'Componente UI dominante explicado predominantemente por lactato' : Number.isFinite(acidBase.uiResidual) && acidBase.uiResidual <= -4 && acidBase.uiResidual > -6 ? `Residual moderado tras lactato ≈ ${fmt(acidBase.uiResidual)}` : 'Componente UI no dominante'} /></div></div>{mode === 'teaching' && <div className="rounded-2xl border border-cyan-900/30 bg-cyan-950/20 p-4 text-sm text-slate-300 leading-6"><div className="text-cyan-300 font-semibold mb-1">Modo docente</div><div>SBE_SID = (Na−Cl) − referencia pH-ajustada = {fmt(acidBase.naCl)} − {fmt(acidBase.sidRef)} = {fmt(acidBase.sbeSid)}</div><div>SBE_Alb = 0.3 × (40 − albúmina) = {fmt(acidBase.sbeAlb)}</div><div>SBE_UI = SBE − SBE_SID − SBE_Alb = {fmt(acidBase.sbeUi)}</div><div>UI residual tras lactato ≈ {fmt(acidBase.uiResidual)}</div></div>}</div>}
             </div>
           </div>
         </div>
