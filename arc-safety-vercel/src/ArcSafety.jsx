@@ -385,6 +385,17 @@ function computeLongitudinalTrajectory(timeline) {
     redControls >= 1,
     last.ratioTrend === 'rising'
   ].filter(Boolean).length
+  const globalCitrateConvergence =
+    ratios.length >= 4 &&
+    Number.isFinite(lastRatio) &&
+    Number.isFinite(firstRatio) &&
+    lastRatio >= 2.60 &&
+    lastRatio > firstRatio + 0.20 &&
+    (
+      calciumReplacementEscalating ||
+      ionizedCalciumFalling ||
+      redControls >= 2
+    )
   const nonConvergentPattern =
     timeline.length >= 4 &&
     ratioReassuring &&
@@ -413,11 +424,11 @@ function computeLongitudinalTrajectory(timeline) {
     }
   }
 
-  if (ratioProgressiveRise && convergentSignals >= 2) {
+  if ((ratioProgressiveRise && convergentSignals >= 2) || globalCitrateConvergence) {
     return {
       level: 'red',
       title: 'Trayectoria convergente para acumulación de citrato',
-      text: `${narrative} Se detecta ascenso progresivo del ratio tCa/iCa con progresión compatible con metabolismo insuficiente del citrato. Integrar con el motor ARC puntual y Stewart Light sin reinterpretar un valor aislado.`
+      text: `${narrative} Se detecta una trayectoria compatible con metabolismo insuficiente del citrato, por ascenso progresivo o convergencia global del ratio tCa/iCa junto con señales cálcicas/metabólicas acompañantes.`
     }
   }
 
