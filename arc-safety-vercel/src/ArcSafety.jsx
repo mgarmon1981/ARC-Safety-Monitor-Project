@@ -416,10 +416,21 @@ function computeLongitudinalTrajectory(timeline) {
     !ratioProgressiveRise &&
     !calciumReplacementEscalating &&
     !ionizedCalciumFalling
+  const firstIonizedCalcium = ionizedCalcium[0]
+  const lastIonizedCalcium = lastFinite(timeline, 'caIonico')
+  const firstCalciumIv = calciumIv[0]
+  const lastCalciumIv = lastFinite(timeline, 'calciumIv')
+  const ionizedCalciumStableText =
+    Number.isFinite(firstIonizedCalcium) &&
+    Number.isFinite(lastIonizedCalcium) &&
+    fmt(firstIonizedCalcium, 2) === fmt(lastIonizedCalcium, 2)
+  const calciumTrajectorySummary = calciumReplacementEscalating && ionizedCalciumStableText
+    ? `reposicion calcica aumenta de ${fmt(firstCalciumIv, 1)} a ${fmt(lastCalciumIv, 1)} para mantener calcio ionico estable (${fmt(firstIonizedCalcium, 2)} → ${fmt(lastIonizedCalcium, 2)})`
+    : summarizeChange('calcio ionico', firstIonizedCalcium, lastIonizedCalcium, 2)
   const summaryParts = [
     summarizeChange('ratio tCa/iCa', ratios[0], lastFinite(timeline, 'ratio'), 2),
-    summarizeChange('calcio ionico', ionizedCalcium[0], lastFinite(timeline, 'caIonico'), 2),
-    summarizeChange('reposicion calcica', calciumIv[0], lastFinite(timeline, 'calciumIv'), 1),
+    calciumTrajectorySummary,
+    calciumReplacementEscalating && ionizedCalciumStableText ? null : summarizeChange('reposicion calcica', firstCalciumIv, lastCalciumIv, 1),
     summarizeChange('lactato', lactates[0], lastFinite(timeline, 'lactate'), 1),
     summarizeChange('SBE', sbes[0], lastFinite(timeline, 'sbe'), 1)
   ].filter(Boolean)
