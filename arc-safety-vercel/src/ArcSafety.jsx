@@ -396,6 +396,17 @@ function computeLongitudinalTrajectory(timeline) {
       ionizedCalciumFalling ||
       redControls >= 2
     )
+  const sustainedHighRatioConvergence =
+    ratios.length >= 4 &&
+    Number.isFinite(lastRatio) &&
+    Number.isFinite(firstRatio) &&
+    lastRatio >= 2.60 &&
+    lastRatio >= firstRatio + 0.20 &&
+    (
+      calciumReplacementEscalating ||
+      ionizedCalciumFalling ||
+      redControls >= 2
+    )
   const nonConvergentPattern =
     timeline.length >= 4 &&
     ratioReassuring &&
@@ -424,7 +435,11 @@ function computeLongitudinalTrajectory(timeline) {
     }
   }
 
-  if ((ratioProgressiveRise && convergentSignals >= 2) || globalCitrateConvergence) {
+  if (
+    (ratioProgressiveRise && convergentSignals >= 2) ||
+    globalCitrateConvergence ||
+    sustainedHighRatioConvergence
+  ) {
     return {
       level: 'red',
       title: 'Trayectoria convergente para acumulación de citrato',
