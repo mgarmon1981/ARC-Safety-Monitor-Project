@@ -180,6 +180,7 @@ function computeArc(inputs, acidBase) {
   const vasoRising = inputs.vasoTrend === 'rising'
   const technicalChecked = inputs.technicalAlarm === 'yes_checked'
   const technicalUnchecked = inputs.technicalAlarm === 'yes_unchecked'
+  const calciumIv = n(inputs.calciumIv)
   const rawUnexplainedAcidosis = acidBase.unexplainedAcidosis || inputs.unexplainedAcidosisManual
   const severeShockConfounder =
     acidBase.lactate >= 6 &&
@@ -191,17 +192,30 @@ function computeArc(inputs, acidBase) {
   const unexplainedAcidosis = rawUnexplainedAcidosis && !severeShockConfounder
   const realDynamicSignals = [ratioRising, lactateRising, vasoRising].filter(Boolean).length
   const technicalConcern = technicalUnchecked && caIonico < 0.95 && ratio >= 2.25
-  const hasMajorSignal = ratio > 2.5 || unexplainedAcidosis || technicalChecked
+  const ratioVeryHigh = ratio >= 2.7
+  const compatibleSignalWithHighRatio =
+    ratioRising ||
+    lactateRising ||
+    vasoRising ||
+    inputs.highRiskContext ||
+    unexplainedAcidosis ||
+    caIonico < 0.95
+  const calciumIvEscalationSignal =
+    ratioRising &&
+    Number.isFinite(calciumIv) &&
+    calciumIv >= 7
+  const ratioHighWithCompatibleSignal = ratio > 2.5 && compatibleSignalWithHighRatio
+  const hasMajorSignal = ratioHighWithCompatibleSignal || ratioVeryHigh || unexplainedAcidosis || technicalChecked || calciumIvEscalationSignal
   const weakCalciumSignal =
     ratio < 2.30 &&
     !technicalChecked &&
     caIonico >= 0.95
   const metabolicDeteriorationWithUnmeasuredAnions =
-    weakCalciumSignal &&
+    (weakCalciumSignal || (ratio >= 2.30 && ratio <= 2.50 && !technicalChecked)) &&
     unexplainedAcidosis &&
     (lactateRising || vasoRising || inputs.highRiskContext) &&
     acidBase.relevantUnmeasuredAnions
-  const strongCalciumSignalForRed = ratio > 2.5 || technicalChecked
+  const strongCalciumSignalForRed = ratioVeryHigh || ratioHighWithCompatibleSignal || technicalChecked || calciumIvEscalationSignal
 
   let status = '🟢 Bajo riesgo'
   let level = 'green'
@@ -211,11 +225,11 @@ function computeArc(inputs, acidBase) {
 
   const citrateBufferExcess = acidBase.ph > 7.45 && acidBase.hco3 > 30 && acidBase.sbe > 5 && acidBase.sbeSid >= 3 && ratio < 2.25 && !ratioRising && !lactateRising && !vasoRising && !unexplainedAcidosis
 
-  if (!technicalUnchecked && !severeShockConfounder && (strongCalciumSignalForRed || (hasMajorSignal && realDynamicSignals >= 1 && !weakCalciumSignal && (unexplainedAcidosis || ratio > 2.5 || realDynamicSignals >= 2 || inputs.highRiskContext)))) {
+  if (!technicalUnchecked && !severeShockConfounder && strongCalciumSignalForRed) {
     status = '🔴 Alta sospecha'
     level = 'red'
     title = 'Metabolismo insuficiente / acumulación de citrato probable'
-    action = 'Revisar perfusión, compensación de calcio y prescripción ARC; repetir control precoz y valorar ajuste según evolución clínica. Considerar suspensión de ARC o transición temporal a otra estrategia de anticoagulación si la sospecha persiste o progresa pese a medidas correctoras.'
+    action = 'Revisar perfusión, compensación de calcio y prescripción ARC; repetir control precoz y valorar ajuste según evolución clínica. Considerar suspensión inmediata de ARC o transición temporal a otra estrategia de anticoagulación si existe trayectoria convergente, ratio claramente elevado, hipocalcemia persistente o escalada de calcio IV pese a revisión técnica.'
     confidence = 'Alta concordancia entre bioquímica, dinámica clínica y hemodinámica.'
   } else if ((ratio >= 2.25 && ratio <= 2.5) || ratio > 2.5 || realDynamicSignals >= 2 || (inputs.highRiskContext && realDynamicSignals >= 1) || technicalChecked || technicalConcern || unexplainedAcidosis) {
     status = '🟡 Riesgo intermedio'
@@ -223,6 +237,7 @@ function computeArc(inputs, acidBase) {
     const stewartQuiet = acidBase.ph >= 7.32 && acidBase.sbe > -4 && acidBase.sbeUi > -4 && !unexplainedAcidosis
     const isolatedBiochemicalSignal = ratio >= 2.25 && ratio <= 2.5 && !ratioRising && !lactateRising && !vasoRising && stewartQuiet
     const contextualWatch = ratio < 2.25 && !ratioRising && !unexplainedAcidosis && inputs.highRiskContext && (lactateRising || vasoRising || acidBase.lactate >= 6 || severeShockConfounder)
+    const ratioGreyZone = ratio >= 2.30 && ratio <= 2.50
 
     if (metabolicDeteriorationWithUnmeasuredAnions) {
       status = '🟡 Deterioro metabólico en contexto de ARC'
@@ -233,6 +248,9 @@ function computeArc(inputs, acidBase) {
         ? 'Vigilancia reforzada: alto riesgo metabólico sin evidencia bioquímica actual de acumulación de citrato'
         : 'Vigilancia contextual: sin evidencia bioquímica de acumulación de citrato'
       confidence = 'Interpretar con cautela: existe contexto de riesgo, pero sin patrón convergente de acumulación de citrato.'
+    } else if (ratioGreyZone) {
+      title = 'Vigilancia bioquímica ARC'
+      confidence = 'Ratio tCa/iCa en zona de vigilancia. Requiere reevaluación precoz y análisis de tendencia antes de asumir acumulación de citrato.'
     } else {
       title = isolatedBiochemicalSignal ? 'Vigilancia bioquímica sin convergencia fisiopatológica' : ratio > 2.5 && !ratioRising && !lactateRising && !vasoRising && !inputs.highRiskContext && !unexplainedAcidosis ? 'Señal bioquímica compatible con posible metabolismo insuficiente del citrato' : 'Señales compatibles con metabolismo insuficiente parcial del citrato'
       confidence = isolatedBiochemicalSignal ? 'Cautela: existe señal bioquímica aislada, pero sin convergencia metabólica ni dinámica.' : ratio > 2.5 && !ratioRising && !lactateRising && !vasoRising && !inputs.highRiskContext && !unexplainedAcidosis ? 'Interpretar en contexto: señal bioquímica aislada sin convergencia fisiopatológica actual.' : 'Interpretar con cautela: vigilar convergencia de señales dinámicas.'
